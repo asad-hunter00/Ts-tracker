@@ -31,19 +31,40 @@ function PaymentForm({ onAdd }: Props) {
   const [type, setType] = useState<Type>("income");
   const [category, setCategory] = useState("Salary");
   const [date, setDate] = useState("");
+
   const [titleError, setTitleError] = useState(false);
   const [amountError, setAmountError] = useState(false);
+  const [dateError, setDateError] = useState(false);
+
+  let titleClass = "form-input";
+  if (titleError) {
+    titleClass += " input-error";
+  }
+
+  let amountClass = "form-input";
+  if (amountError) {
+    amountClass += " input-error";
+  }
+
+  let dateClass = "form-input";
+  if (dateError) {
+    dateClass += " input-error";
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const titleIsEmpty = title.trim() === "";
     const amountIsWrong = amount === "" || Number(amount) <= 0;
+    const dateIsEmpty = date === "";
 
     setTitleError(titleIsEmpty);
     setAmountError(amountIsWrong);
+    setDateError(dateIsEmpty);
 
-    if (titleIsEmpty || amountIsWrong) return;
+    if (titleIsEmpty || amountIsWrong || dateIsEmpty) {
+      return;
+    }
 
     onAdd(title.trim(), Number(amount), type, category, date);
 
@@ -52,6 +73,9 @@ function PaymentForm({ onAdd }: Props) {
     setType("income");
     setCategory("Salary");
     setDate("");
+    setTitleError(false);
+    setAmountError(false);
+    setDateError(false);
   }
 
   return (
@@ -64,14 +88,17 @@ function PaymentForm({ onAdd }: Props) {
       <div className="form-group">
         <label htmlFor="title">Nomi</label>
         <input
-          className={`form-input ${titleError ? "input-error" : ""}`}
+          className={titleClass}
           id="title"
           type="text"
           placeholder="Masalan, Oylik maosh"
           value={title}
           onChange={(event) => {
             setTitle(event.target.value);
-            if (event.target.value.trim()) setTitleError(false);
+
+            if (event.target.value.trim() !== "") {
+              setTitleError(false);
+            }
           }}
         />
         {titleError && (
@@ -82,7 +109,7 @@ function PaymentForm({ onAdd }: Props) {
       <div className="form-group">
         <label htmlFor="amount">Summa (so'm)</label>
         <input
-          className={`form-input ${amountError ? "input-error" : ""}`}
+          className={amountClass}
           id="amount"
           type="number"
           min="1"
@@ -90,7 +117,10 @@ function PaymentForm({ onAdd }: Props) {
           value={amount}
           onChange={(event) => {
             setAmount(event.target.value);
-            if (Number(event.target.value) > 0) setAmountError(false);
+
+            if (Number(event.target.value) > 0) {
+              setAmountError(false);
+            }
           }}
         />
         {amountError && (
@@ -140,13 +170,21 @@ function PaymentForm({ onAdd }: Props) {
       <div className="form-group">
         <label htmlFor="date">Sana</label>
         <input
-          className="form-input"
+          className={dateClass}
           id="date"
           type="date"
           value={date}
-          onChange={(event) => setDate(event.target.value)}
-          required
+          onChange={(event) => {
+            setDate(event.target.value);
+
+            if (event.target.value !== "") {
+              setDateError(false);
+            }
+          }}
         />
+        {dateError && (
+          <span className="error-message">Iltimos, sanani tanlang!</span>
+        )}
       </div>
 
       <button className="submit-button" type="submit">
