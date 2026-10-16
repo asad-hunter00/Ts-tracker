@@ -1,5 +1,6 @@
 import { useState } from "react";
 import PaymentItem from "./PaymentItem";
+import { categories } from "../constants";
 
 type Transaction = {
   id: number;
@@ -13,18 +14,6 @@ type PaymentListProps = {
   payments: Transaction[];
   onDelete: (id: number) => void;
 };
-
-const categories = [
-  "Food",
-  "Shopping",
-  "Transport",
-  "Salary",
-  "Entertainment",
-  "Bills",
-  "Health",
-  "Education",
-  "Other",
-];
 
 function PaymentList({ payments, onDelete }: PaymentListProps) {
   const [category, setCategory] = useState("All");

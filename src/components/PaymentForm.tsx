@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { expenseCategories, incomeCategories } from "../constants";
 
 type Type = "income" | "expense";
 
@@ -12,74 +13,66 @@ type Props = {
   ) => void;
 };
 
-const incomeCategories = ["Salary", "Bonus", "Gift", "Investment", "Other"];
-
-const expenseCategories = [
-  "Food",
-  "Shopping",
-  "Transport",
-  "Entertainment",
-  "Bills",
-  "Health",
-  "Education",
-  "Other",
-];
+type FormValues = {
+  title: string;
+  amount: string;
+  type: Type;
+  category: string;
+  date: string;
+};
 
 function PaymentForm({ onAdd }: Props) {
-  const [title, setTitle] = useState("");
-  const [amount, setAmount] = useState("");
-  const [type, setType] = useState<Type>("income");
-  const [category, setCategory] = useState("Salary");
-  const [date, setDate] = useState("");
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<FormValues>({
+    defaultValues: {
+      title: "",
+      amount: "",
+      type: "income",
+      category: "Salary",
+      date: "",
+    },
+  });
 
-  const [titleError, setTitleError] = useState(false);
-  const [amountError, setAmountError] = useState(false);
-  const [dateError, setDateError] = useState(false);
+  const selectedType = watch("type");
 
-  let titleClass = "form-input";
-  if (titleError) {
-    titleClass += " input-error";
+  let currentCategories: string[] = [];
+
+  if (selectedType === "income") {
+    currentCategories = incomeCategories;
+  } else {
+    currentCategories = expenseCategories;
   }
 
-  let amountClass = "form-input";
-  if (amountError) {
-    amountClass += " input-error";
-  }
+  function getInputClass(hasError: boolean) {
+    let className = "form-input";
 
-  let dateClass = "form-input";
-  if (dateError) {
-    dateClass += " input-error";
-  }
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const titleIsEmpty = title.trim() === "";
-    const amountIsWrong = amount === "" || Number(amount) <= 0;
-    const dateIsEmpty = date === "";
-
-    setTitleError(titleIsEmpty);
-    setAmountError(amountIsWrong);
-    setDateError(dateIsEmpty);
-
-    if (titleIsEmpty || amountIsWrong || dateIsEmpty) {
-      return;
+    if (hasError) {
+      className += " input-error";
     }
 
-    onAdd(title.trim(), Number(amount), type, category, date);
+    return className;
+  }
 
-    setTitle("");
-    setAmount("");
-    setType("income");
-    setCategory("Salary");
-    setDate("");
-    setTitleError(false);
-    setAmountError(false);
-    setDateError(false);
+  function onSubmit(values: FormValues) {
+    onAdd(
+      values.title.trim(),
+      Number(values.amount),
+      values.type,
+      values.category,
+      values.date,
+    );
+
+    reset();
   }
 
   return (
-    <form className="payment-form" onSubmit={handleSubmit}>
+    <form className="payment-form" onSubmit={handleSubmit(onSubmit)}>
       <h3 className="form-title">Yangi tranzaksiya</h3>
       <p className="form-description">
         Kirim yoki chiqim ma'lumotlarini kiriting
@@ -87,103 +80,126 @@ function PaymentForm({ onAdd }: Props) {
 
       <div className="form-group">
         <label htmlFor="title">Nomi</label>
-        <input
-          className={titleClass}
-          id="title"
-          type="text"
-          placeholder="Masalan, Oylik maosh"
-          value={title}
-          onChange={(event) => {
-            setTitle(event.target.value);
 
-            if (event.target.value.trim() !== "") {
-              setTitleError(false);
-            }
+        <Controller
+          name="title"
+          control={control}
+          rules={{
+            validate: (value) =>
+              value.trim() !== "" || "Iltimos, nomini to‘ldiring!",
           }}
+          render={({ field }) => (
+            <input
+              {...field}
+              className={getInputClass(Boolean(errors.title))}
+              id="title"
+              type="text"
+              placeholder="Masalan, Oylik maosh"
+            />
+          )}
         />
-        {titleError && (
-          <span className="error-message">Iltimos, nomini to‘ldiring!</span>
+
+        {errors.title && (
+          <span className="error-message">{errors.title.message}</span>
         )}
       </div>
 
       <div className="form-group">
         <label htmlFor="amount">Summa (so'm)</label>
-        <input
-          className={amountClass}
-          id="amount"
-          type="number"
-          min="1"
-          placeholder="Masalan, 500000"
-          value={amount}
-          onChange={(event) => {
-            setAmount(event.target.value);
 
-            if (Number(event.target.value) > 0) {
-              setAmountError(false);
-            }
+        <Controller
+          name="amount"
+          control={control}
+          rules={{
+            validate: (value) =>
+              Number(value) > 0 || "Summani to‘g‘ri kiriting!",
           }}
+          render={({ field }) => (
+            <input
+              {...field}
+              className={getInputClass(Boolean(errors.amount))}
+              id="amount"
+              type="number"
+              min="1"
+              placeholder="Masalan, 500000"
+            />
+          )}
         />
-        {amountError && (
-          <span className="error-message">Summani to‘g‘ri kiriting!</span>
+
+        {errors.amount && (
+          <span className="error-message">{errors.amount.message}</span>
         )}
       </div>
 
       <div className="form-group">
         <label htmlFor="type">Tranzaksiya turi</label>
-        <select
-          className="form-input"
-          id="type"
-          value={type}
-          onChange={(event) => setType(event.target.value as Type)}
-        >
-          <option value="income">Kirim - (Income)</option>
-          <option value="expense">Chiqim - (Expense)</option>
-        </select>
+
+        <Controller
+          name="type"
+          control={control}
+          render={({ field }) => (
+            <select
+              {...field}
+              className="form-input"
+              id="type"
+              onChange={(event) => {
+                const newType = event.target.value as Type;
+
+                field.onChange(newType);
+
+                if (newType === "income") {
+                  setValue("category", "Salary");
+                } else {
+                  setValue("category", expenseCategories[0]);
+                }
+              }}
+            >
+              <option value="income">Kirim - (Income)</option>
+              <option value="expense">Chiqim - (Expense)</option>
+            </select>
+          )}
+        />
       </div>
 
       <div className="form-group">
         <label htmlFor="category">Kategoriya</label>
-        <select
-          className="form-input"
-          id="category"
-          value={category}
-          onChange={(event) => setCategory(event.target.value)}
-        >
-          <optgroup label="Kirim kategoriyalari">
-            {incomeCategories.map((item) => (
-              <option key={`income-${item}`} value={item}>
-                {item}
-              </option>
-            ))}
-          </optgroup>
 
-          <optgroup label="Chiqim kategoriyalari">
-            {expenseCategories.map((item) => (
-              <option key={`expense-${item}`} value={item}>
-                {item}
-              </option>
-            ))}
-          </optgroup>
-        </select>
+        <Controller
+          name="category"
+          control={control}
+          render={({ field }) => (
+            <select {...field} className="form-input" id="category">
+              {currentCategories.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          )}
+        />
       </div>
 
       <div className="form-group">
         <label htmlFor="date">Sana</label>
-        <input
-          className={dateClass}
-          id="date"
-          type="date"
-          value={date}
-          onChange={(event) => {
-            setDate(event.target.value);
 
-            if (event.target.value !== "") {
-              setDateError(false);
-            }
+        <Controller
+          name="date"
+          control={control}
+          rules={{
+            required: "Iltimos, sanani tanlang!",
           }}
+          render={({ field }) => (
+            <input
+              {...field}
+              className={getInputClass(Boolean(errors.date))}
+              id="date"
+              type="date"
+            />
+          )}
         />
-        {dateError && (
-          <span className="error-message">Iltimos, sanani tanlang!</span>
+
+        {errors.date && (
+          <span className="error-message">{errors.date.message}</span>
         )}
       </div>
 

@@ -17,13 +17,14 @@ type Transaction = {
 function App() {
   const [payments, setPayments] = useState<Transaction[]>([]);
 
+  //  Supabase transaction that retrieves data
+
   useEffect(() => {
     async function loadPayments() {
-      const table = supabase.from("transactions");
-      const request = table.select("*");
-      const result = await request.order("created_at", {
-        ascending: false,
-      });
+      const result = await supabase
+        .from("transactions")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (result.error) {
         console.log(result.error.message);
@@ -77,6 +78,8 @@ function App() {
       oldPayments.filter((payment) => payment.id !== id),
     );
   }
+
+  //  Supabase transaction that retrieves data
 
   let income = 0;
   let expense = 0;
